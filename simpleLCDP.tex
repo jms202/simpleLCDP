@@ -1,0 +1,95 @@
+\documentclass[12pt]{article}
+
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{listings}
+
+\lstset{basicstyle=\ttfamily,breaklines=true}
+
+\title{Code to solve a lifecycle consumption-savings problem using dynamic programming}
+\author{
+        Jonathan Shaw
+}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+This note describes a lifecycle consumption-savings problem that have been implemented in C++ using dynamic programming. The code can be found in \href{https://github.com/jms202/simpleLCDP.git}{this} github repository. Please let me know if you find any errors either in this document or in the code itself (see website for contact details).
+
+\section{Problem description}
+
+The agent's problem is to choose consumption/savings to maximise expected lifetime utility subject to the transition equation for wealth and an exogenous stochastic and persistent process for income.
+
+The recursive formulation of the problem is:
+\begin{equation}
+	V_t(W_t, y_t) = \max_{\underline{W}_{t+1} \leq W_{t+1} \leq \overline{W}_{t+1}} \left\{ u(c_t) + \beta E_{y_{t+1} | y_t} V_{t+1}(W_{t+1}, y_{t+1}) \right\}
+\end{equation}
+for \(t=1,\ldots,T\) where \(W_t\) is assets, \(y_t\) is income and \(c_t\) is consumption. This maximisation is subject to the transition equation:
+\begin{equation}
+	W_{t+1} = R (W_t + y_t - c_t)
+\end{equation}
+with \(W_1\) given and \(W_{T+1} \geq 0\). Log income evolves according to an AR(1) process:
+\begin{equation}
+	\ln y_t = \rho \ln y_{t-1} + (1-\rho) \mu + \varepsilon_t
+\end{equation}
+
+\section{Code dependencies}
+
+The code was originally written in a Linux environment and relies on a number of utilites available in that environmens. Windows equivalents do exist but some modifications to the code may be needed. Comments here are concerned with how to run the code under Linux (specifically Ubuntu).
+
+The utilities the code relies upon are GNU PlotUtils (a plotting library), the GNU Scientific Library and the Boost C++ Libraries. All of these need to be installed on your system to be able to compile and run the code.
+
+\subsection{Installing PlotUtils}
+
+On Ubuntu, this can be done easily in a terminal by issuing the following commands:
+\begin{lstlisting}
+sudo apt-get update
+sudo apt-get install plotutils
+\end{lstlisting}
+
+\subsection{Installing GNU Scientific Library}
+
+It is advisable to check the latest installation instructions that come with the library in case any of the following has changed.
+
+Download the latest version of the GNU Scientific Library from \href{https://www.gnu.org/software/gsl/}{here}. Unpack the downloaded file at the command line (this assumes that the file is called \texttt{gsl-latest.tar.gz} and is in the Downloads folder)
+\begin{lstlisting}
+cd Downloads/
+tar -xvzf gsl-latest.tar.gz
+\end{lstlisting}
+Compile and install the library. (This is based on the instructions in the INSTALL file in the directory you just unzipped, but doing it as root user to ensure it installs properly to \texttt{/usr/local/}. It also assumes that the unzipped directory is called \texttt{gsl-2.5}).
+\begin{lstlisting}
+sudo -i
+cd /home/jonathan/Downloads/gsl-2.5/
+./configure && make && make install
+exit
+\end{lstlisting}
+Now, in line with the usage instructions \href{https://www.gnu.org/software/gsl/doc/html/usage.html}{here}, adjust the \texttt{LD\_LIBRARY\_PATH} so that the shared libraries can be found at runtime. To do this permanently, open the \texttt{.profile} file in your home directory and add the following line to the bottom of the file:
+\begin{lstlisting}
+export LD_LIBRARY_PATH=/usr/local/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+\end{lstlisting}
+Save and close the file. You will need to log out and back in for this to take effect.
+
+\subsection{Installing the Boost C++ Libraries}
+
+Again, check on the Boost webpage that these instructions haven't changed.
+
+Navigate to \href{https://www.boost.org/doc/libs/1_68_0/more/getting_started/unix-variants.html}{here} and click to download the Boost \texttt{.tar.bz2} file. At the terminal type the following (adjusting the directory locations and filenames as appropriate):
+\begin{lstlisting}
+cd /usr/local/
+tar --bzip2 -xf ~/Downloads/boost_1_67_0.tar.bz2 
+\end{lstlisting}
+
+\section{Compiling and running the code}
+
+To compile and run, execute the following at the terminal (again adjusting filenames and paths where appropriate)
+\begin{lstlisting}
+cd /path/to/cppfile/
+g++ -I /usr/local/boost_1_67_0/ -std=c++11 simpleLCDP.cpp -o simpleLCDP -lgsl -lgslcblas -lm
+./simpleLCDP
+\end{lstlisting}
+This will create two postscript files, \texttt{solution.ps} and \texttt{simulation.ps}, that plot the value function and simulated assets profiles.
+
+\end{document}
